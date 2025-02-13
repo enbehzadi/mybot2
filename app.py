@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)  # فعال کردن CORS برای همه دامنه‌ها
 
 # تنظیمات اتصال به PostgreSQL
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:yourpassword@localhost:5432/my_telegram_bot')
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_TCP_PROXY_DOMAIN}}:${{RAILWAY_TCP_PROXY_PORT}}/${{PGDATABASE}}')
 
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
