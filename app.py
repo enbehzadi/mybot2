@@ -5,7 +5,7 @@ import os
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # فعال کردن CORS برای همه دامنه‌ها
 
 # تنظیمات اتصال به PostgreSQL
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:yourpassword@localhost:5432/my_telegram_bot')
@@ -18,6 +18,7 @@ def get_db_connection():
 def home():
     return "سرور در حال اجرا است! به مسیر /messages برای دیدن پیام‌ها مراجعه کنید."
 
+# روت برای دریافت پیام‌ها از پایگاه داده
 @app.route('/messages', methods=['GET'])
 def get_messages():
     conn = get_db_connection()
@@ -28,6 +29,7 @@ def get_messages():
     conn.close()
     return jsonify(messages)
 
+# روت برای ذخیره پیام‌های جدید در پایگاه داده
 @app.route('/messages', methods=['POST'])
 def add_message():
     new_message = request.get_json()
