@@ -1,3 +1,4 @@
-Flask==2.3.2
-psycopg2==2.9.6
-Flask-CORS==4.0.0
+Flask
+psycopg2
+Flask-CORS
+python-telegram-bot
