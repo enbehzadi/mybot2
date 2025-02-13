@@ -2,3 +2,4 @@ Flask
 psycopg2
 Flask-CORS
 python-telegram-bot
+gunicorn
