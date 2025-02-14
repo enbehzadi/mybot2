@@ -31,7 +31,7 @@ async def add_message(update: Update, context: CallbackContext):
 def main():
     application = Application.builder().token(TOKEN).build()
 
-    application.add_handler(CommandHandler("ارسال پیام سریع", start))
+    application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, add_message))
 
     application.run_polling()
