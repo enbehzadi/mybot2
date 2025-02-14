@@ -33,13 +33,22 @@ def get_messages():
 
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute('SELECT * FROM messages;')
+        # ترتیب معکوس برای نمایش پیام‌ها از آخر به اول
+        cur.execute('SELECT * FROM messages ORDER BY id DESC;')
         messages = cur.fetchall()
         cur.close()
-        conn.close()
+
+        if not messages:  # در صورتی که هیچ پیام موجود نباشد
+            return jsonify({"error": "No messages found"}), 404
+
         return jsonify(messages)
     except Exception as e:
+        print(f"Error fetching messages: {e}")
         return jsonify({"error": str(e)}), 500
+    finally:
+        # اطمینان از بستن اتصال بعد از اتمام کار
+        if conn:
+            conn.close()
 
 @app.route('/messages', methods=['POST'])
 def add_message():
@@ -65,10 +74,20 @@ def add_message():
         message_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
-        conn.close()
-        return jsonify({'id': message_id, 'telegram_id': telegram_id, 'first_name': first_name, 'last_name': last_name, 'message_text': message_text}), 201
+        return jsonify({
+            'id': message_id,
+            'telegram_id': telegram_id,
+            'first_name': first_name,
+            'last_name': last_name,
+            'message_text': message_text
+        }), 201
     except Exception as e:
+        print(f"Error inserting message: {e}")
         return jsonify({"error": str(e)}), 500
+    finally:
+        # اطمینان از بستن اتصال بعد از اتمام کار
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
