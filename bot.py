@@ -24,14 +24,14 @@ async def add_message(update: Update, context: CallbackContext):
 
     response = requests.post(API_URL, json=message_data)
     if response.status_code == 201:
-        await update.message.reply_text('عزیز پیام شما دریافت شد'+first_name +' '+last_name+' ')
+        await update.message.reply_text(first_name +' '+last_name+' ''عزیز پیام شما دریافت شد')
     else:
         await update.message.reply_text('خطا در ارسال پیام.')
 
 def main():
     application = Application.builder().token(TOKEN).build()
 
-    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("ارسال پیام سریع", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, add_message))
 
     application.run_polling()
