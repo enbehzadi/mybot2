@@ -26,34 +26,10 @@ def get_db_connection():
 def home():
     return "سرور در حال اجرا است! به مسیر /messages برای دیدن پیام‌ها مراجعه کنید."
 
-@app.route('/messages', methods=['GET'])
-def get_messages():
-    conn = get_db_connection()
-    if conn is None:
-        return jsonify({"error": "Database connection failed"}), 500
-
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        # ترتیب معکوس برای نمایش پیام‌ها از آخر به اول
-        cur.execute('SELECT * FROM messages ORDER BY id DESC;')
-        messages = cur.fetchall()
-        cur.close()
-
-        if not messages:  # در صورتی که هیچ پیام موجود نباشد
-            return jsonify({"error": "No messages found"}), 404
-
-        return jsonify(messages)
-    except Exception as e:
-        print(f"Error fetching messages: {e}")
-        return jsonify({"error": str(e)}), 500
-    finally:
-        # اطمینان از بستن اتصال بعد از اتمام کار
-        if conn:
-            conn.close()
-
 @app.route('/messages', methods=['POST'])
 def add_message():
     new_message = request.get_json()
+
     if not all(k in new_message for k in ('telegram_id', 'first_name', 'last_name', 'message_text')):
         return jsonify({"error": "Missing required fields"}), 400
 
@@ -67,6 +43,7 @@ def add_message():
         return jsonify({"error": "Database connection failed"}), 500
 
     try:
+        # اضافه کردن پیام جدید
         cur = conn.cursor()
         cur.execute('''
             INSERT INTO messages (telegram_id, first_name, last_name, message_text)
@@ -74,20 +51,30 @@ def add_message():
         ''', (telegram_id, first_name, last_name, message_text))
         message_id = cur.fetchone()[0]
         conn.commit()
+
+        # حالا تمام پیام‌ها را فراخوانی می‌کنیم
+        cur.execute('SELECT * FROM messages ORDER BY id DESC;')
+        messages = cur.fetchall()
         cur.close()
+
+        # اطمینان از اینکه پیام‌ها موجود هستند
+        if not messages:
+            return jsonify({"error": "No messages found"}), 404
+
         print(f"Message inserted with ID {message_id}")  # چاپ برای بررسی اینکه داده وارد شده است
+
         return jsonify({
             'id': message_id,
             'telegram_id': telegram_id,
             'first_name': first_name,
             'last_name': last_name,
-            'message_text': message_text
+            'message_text': message_text,
+            'all_messages': messages  # ارسال تمام پیام‌ها همراه با پیام جدید
         }), 201
     except Exception as e:
         print(f"Error inserting message: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        # اطمینان از بستن اتصال بعد از اتمام کار
         if conn:
             conn.close()
 
