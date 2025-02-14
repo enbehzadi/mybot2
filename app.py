@@ -75,6 +75,7 @@ def add_message():
         message_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
+        print(f"Message inserted with ID {message_id}")  # چاپ برای بررسی اینکه داده وارد شده است
         return jsonify({
             'id': message_id,
             'telegram_id': telegram_id,
