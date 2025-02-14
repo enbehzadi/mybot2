@@ -24,7 +24,7 @@ async def add_message(update: Update, context: CallbackContext):
 
     response = requests.post(API_URL, json=message_data)
     if response.status_code == 201:
-        await update.message.reply_text('پیام با موفقیت ارسال شد!')
+        await update.message.reply_text('عزیز پیام شما دریافت شد'+first_name +' '+last_name+' ')
     else:
         await update.message.reply_text('خطا در ارسال پیام.')
 
