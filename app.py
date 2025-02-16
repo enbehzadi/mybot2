@@ -26,7 +26,7 @@ def get_messages():
         return jsonify({"error": "Database connection failed"}), 500
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute('SELECT * FROM messages ORDER BY id DESC;')
+            cur.execute('SELECT * FROM messages;')
             messages = cur.fetchall()
             return jsonify(messages if messages else {"error": "No messages found"}), 200
     except Exception as e:
