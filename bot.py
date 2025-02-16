@@ -1,5 +1,6 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+import psycopg2
 import os
 import logging
 
@@ -16,8 +17,15 @@ if not TOKEN:
     logger.error("Error: Telegram bot token is missing!")
     exit(1)
 
-# آیدی شما برای دریافت پیام‌های اضطراری (مثلاً آیدی عددی شما در تلگرام)
-YOUR_CHAT_ID = 123456789  # این را با آیدی خود جایگزین کنید
+# اتصال به دیتابیس PostgreSQL
+def get_db_connection():
+    return psycopg2.connect(
+        dbname=os.getenv('DB_NAME'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        host=os.getenv('DB_HOST'),
+        port=os.getenv('DB_PORT')
+    )
 
 # ایجاد کیبورد منو
 def get_menu_keyboard():
@@ -30,8 +38,39 @@ def get_menu_keyboard():
         resize_keyboard=True  # کوچک کردن دکمه‌ها برای نمایش بهتر
     )
 
+# ذخیره اطلاعات کاربر در دیتابیس
+def save_user(telegram_id, first_name, last_name, username):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO users (telegram_id, first_name, last_name, username)
+    VALUES (%s, %s, %s, %s)
+    ON CONFLICT (telegram_id) DO NOTHING
+    ''', (telegram_id, first_name, last_name, username))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# ذخیره پیام در دیتابیس
+def save_message(user_id, message_text):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO messages (user_id, message_text)
+    VALUES (%s, %s)
+    ''', (user_id, message_text))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 # دستور /start
 async def start(update: Update, context: CallbackContext):
+    user = update.message.from_user
+    # ذخیره اطلاعات کاربر در دیتابیس
+    save_user(user.id, user.first_name, user.last_name, user.username)
+    # ذخیره پیام استارت در دیتابیس
+    save_message(user.id, "Start")
+
     await update.message.reply_text(
         "Welcome! Please choose an option from the menu below:",
         reply_markup=get_menu_keyboard()
@@ -48,6 +87,9 @@ async def menu(update: Update, context: CallbackContext):
 async def handle_menu(update: Update, context: CallbackContext):
     text = update.message.text
     user = update.message.from_user
+
+    # ذخیره انتخاب کاربر در دیتابیس
+    save_message(user.id, text)
 
     if text == "Send Emergency Message":
         await update.message.reply_text("Please send your emergency message:")
@@ -77,17 +119,10 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
         text = update.message.text
         user = update.message.from_user
 
-        # ارسال پیام به شما (یا آیدی مشخص)
-        try:
-            await context.bot.send_message(
-                chat_id=YOUR_CHAT_ID,
-                text=f"🚨 Emergency Message from {user.first_name} ({user.username}):\n\n{text}"
-            )
-            await update.message.reply_text("Your emergency message has been sent ✅")
-        except Exception as e:
-            logger.error(f"Error sending emergency message: {e}")
-            await update.message.reply_text("❌ Failed to send your emergency message. Please try again later.")
+        # ذخیره پیام اضطراری در دیتابیس
+        save_message(user.id, f"Emergency Message: {text}")
 
+        await update.message.reply_text("Your emergency message has been sent ✅")
         # پاک کردن وضعیت
         context.user_data['waiting_for_emergency_message'] = False
     else:
