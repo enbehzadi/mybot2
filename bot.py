@@ -4,7 +4,7 @@ import requests
 import os
 
 TOKEN = '7322999847:AAF5YpZDm4vGEmLWPGB6ht2lCcFmm6g5Ixs'
-API_URL = 'http://127.0.0.1:5000/messages'
+API_URL = 'https://web-production-445f.up.railway.app/messages'
 
 async def start(update: Update, context: CallbackContext):
     await update.message.reply_text('سلام! پیام خود را ارسال کنید.')
