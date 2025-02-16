@@ -4,7 +4,6 @@ from psycopg2.extras import RealDictCursor
 import os
 from flask_cors import CORS
 from telegram import Bot
-import asyncio
 
 def get_db_connection():
     try:
@@ -28,7 +27,7 @@ if not TELEGRAM_BOT_TOKEN:
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
 @app.route('/send_message', methods=['POST'])
-async def send_message():
+def send_message():
     data = request.get_json()
     required_fields = ['chat_id', 'text']
     if not all(field in data for field in required_fields):
@@ -46,7 +45,7 @@ async def send_message():
 
     try:
         print(f"Sending message to chat_id: {chat_id}, text: {text}")
-        await bot.send_message(chat_id=chat_id, text=text)
+        bot.send_message(chat_id=chat_id, text=text)
         return jsonify({"status": "Message sent successfully"}), 200
     except Exception as e:
         print(f"Error sending message to Telegram: {e}")
