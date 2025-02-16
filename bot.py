@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
-import requests
+import aiohttp
 import os
 
 TOKEN = '7322999847:AAF5YpZDm4vGEmLWPGB6ht2lCcFmm6g5Ixs'
@@ -21,11 +21,12 @@ async def add_message(update: Update, context: CallbackContext):
     }
 
     try:
-        response = requests.post(API_URL, json=message_data)
-        if response.status_code == 201:
-            await update.message.reply_text(f"{user.first_name} عزیز، پیام شما دریافت شد ✅")
-        else:
-            await update.message.reply_text('❌ خطا در ارسال پیام.')
+        async with aiohttp.ClientSession() as session:
+            async with session.post(API_URL, json=message_data) as response:
+                if response.status == 201:
+                    await update.message.reply_text(f"{user.first_name} عزیز، پیام شما دریافت شد ✅")
+                else:
+                    await update.message.reply_text('❌ خطا در ارسال پیام.')
     except Exception as e:
         await update.message.reply_text(f'❌ خطای سرور: {str(e)}')
 
