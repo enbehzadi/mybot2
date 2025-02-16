@@ -4,9 +4,7 @@ from psycopg2.extras import RealDictCursor
 import os
 from flask_cors import CORS
 from telegram import Bot
-from psycopg2 import pool
 
-# تنظیمات مربوط به پایگاه داده
 def get_db_connection():
     try:
         conn = psycopg2.connect(os.getenv('DATABASE_URL'))
@@ -15,26 +13,18 @@ def get_db_connection():
         print("Database connection error:", e)
         return None
 
-# تنظیمات اتصال به pool پایگاه داده برای مدیریت بهتر اتصالات
-def get_db_pool():
-    try:
-        return psycopg2.pool.SimpleConnectionPool(1, 10, os.getenv('DATABASE_URL'))
-    except Exception as e:
-        print("Error creating connection pool:", e)
-        return None
-
 app = Flask(__name__)
 CORS(app)
+
+@app.route('/')
+def home():
+    return "سرور در حال اجرا است! به مسیر /messages برای دیدن پیام‌ها مراجعه کنید."
 
 # توکن ربات تلگرام
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 if not TELEGRAM_BOT_TOKEN:
     print("Error: Telegram bot token is missing!")
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
-
-@app.route('/')
-def home():
-    return "سرور در حال اجرا است! به مسیر /messages برای دیدن پیام‌ها مراجعه کنید."
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
@@ -63,12 +53,10 @@ def send_message():
 
 @app.route('/messages', methods=['GET'])
 def get_messages():
-    db_pool = get_db_pool()
-    if not db_pool:
+    conn = get_db_connection()
+    if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-
     try:
-        conn = db_pool.getconn()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute('SELECT * FROM messages;')
             messages = cur.fetchall()
@@ -76,8 +64,7 @@ def get_messages():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn:
-            db_pool.putconn(conn)
+        conn.close()
 
 @app.route('/messages', methods=['POST'])
 def add_message():
@@ -86,12 +73,11 @@ def add_message():
     if not all(field in new_message for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
 
-    db_pool = get_db_pool()
-    if not db_pool:
+    conn = get_db_connection()
+    if not conn:
         return jsonify({"error": "Database connection failed"}), 500
 
     try:
-        conn = db_pool.getconn()
         with conn.cursor() as cur:
             cur.execute('''INSERT INTO messages (telegram_id, first_name, last_name, message_text)
                            VALUES (%s, %s, %s, %s) RETURNING id;''',
@@ -103,8 +89,7 @@ def add_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn:
-            db_pool.putconn(conn)
+        conn.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)), debug=False)
