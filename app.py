@@ -4,22 +4,16 @@ from psycopg2.extras import RealDictCursor
 import os
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app)
-
-# دریافت DATABASE_URL از متغیرهای محیطی
-DATABASE_URL = os.getenv('DATABASE_URL')
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set. Make sure it is defined in your Railway environment.")
-
-# تابع برای ایجاد اتصال به دیتابیس
 def get_db_connection():
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(os.getenv('DATABASE_URL'))
         return conn
     except Exception as e:
         print("Database connection error:", e)
         return None
+
+app = Flask(__name__)
+CORS(app)
 
 @app.route('/')
 def home():
@@ -28,68 +22,42 @@ def home():
 @app.route('/messages', methods=['GET'])
 def get_messages():
     conn = get_db_connection()
-    if conn is None:
+    if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-
     try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        # ترتیب معکوس برای نمایش پیام‌ها از آخر به اول
-        cur.execute('SELECT * FROM messages ORDER BY id DESC;')
-        messages = cur.fetchall()
-        cur.close()
-
-        if not messages:  # در صورتی که هیچ پیام موجود نباشد
-            return jsonify({"error": "No messages found"}), 404
-
-        return jsonify(messages)
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute('SELECT * FROM messages ORDER BY id DESC;')
+            messages = cur.fetchall()
+            return jsonify(messages if messages else {"error": "No messages found"}), 200
     except Exception as e:
-        print(f"Error fetching messages: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        # اطمینان از بستن اتصال بعد از اتمام کار
-        if conn:
-            conn.close()
+        conn.close()
 
 @app.route('/messages', methods=['POST'])
 def add_message():
     new_message = request.get_json()
-    if not all(k in new_message for k in ('telegram_id', 'first_name', 'last_name', 'message_text')):
+    required_fields = ['telegram_id', 'first_name', 'last_name', 'message_text']
+    if not all(field in new_message for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
 
-    telegram_id = new_message['telegram_id']
-    first_name = new_message['first_name']
-    last_name = new_message['last_name']
-    message_text = new_message['message_text']
-
     conn = get_db_connection()
-    if conn is None:
+    if not conn:
         return jsonify({"error": "Database connection failed"}), 500
 
     try:
-        cur = conn.cursor()
-        cur.execute('''
-            INSERT INTO messages (telegram_id, first_name, last_name, message_text)
-            VALUES (%s, %s, %s, %s) RETURNING id;
-        ''', (telegram_id, first_name, last_name, message_text))
-        message_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        return jsonify({
-            'id': message_id,
-            'telegram_id': telegram_id,
-            'first_name': first_name,
-            'last_name': last_name,
-            'message_text': message_text
-        }), 201
+        with conn.cursor() as cur:
+            cur.execute('''INSERT INTO messages (telegram_id, first_name, last_name, message_text)
+                           VALUES (%s, %s, %s, %s) RETURNING id;''',
+                        (new_message['telegram_id'], new_message['first_name'],
+                         new_message['last_name'], new_message['message_text']))
+            message_id = cur.fetchone()[0]
+            conn.commit()
+            return jsonify({"id": message_id, **new_message}), 201
     except Exception as e:
-        print(f"Error inserting message: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        # اطمینان از بستن اتصال بعد از اتمام کار
-        if conn:
-            conn.close()
+        conn.close()
 
 if __name__ == '__main__':
-    from os import getenv
-    port = int(getenv("PORT", 5000))  # دریافت پورت از متغیرهای محیطی Railway
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)), debug=False)
