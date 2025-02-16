@@ -29,6 +29,12 @@ async def add_message(update: Update, context: CallbackContext):
     except Exception as e:
         await update.message.reply_text(f'❌ خطای سرور: {str(e)}')
 
+async def send_message_to_user(context: CallbackContext, chat_id: int, message: str):
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=message)
+    except Exception as e:
+        print(f"Error sending message: {e}")
+
 def main():
     application = Application.builder().token(TOKEN).build()
 
