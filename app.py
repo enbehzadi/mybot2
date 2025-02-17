@@ -72,6 +72,9 @@ async def handle_menu(update: Update, context: CallbackContext):
     text = update.message.text
     user = update.message.from_user
 
+    # ذخیره انتخاب کاربر در API
+    await send_to_api(user, text)
+
     if text == "Send Emergency Message":
         await update.message.reply_text("لطفا پیام اضطراری خود را ارسال کنید:")
         context.user_data['waiting_for_emergency_message'] = True
@@ -109,16 +112,6 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
     else:
         await update.message.reply_text("لطفا از منو استفاده کنید.")
 
-# مدیریت پیام‌های معمولی
-async def handle_regular_message(update: Update, context: CallbackContext):
-    text = update.message.text
-    user = update.message.from_user
-
-    # ذخیره پیام معمولی در API
-    await send_to_api(user, f"Regular Message: {text}")
-
-    await update.message.reply_text("پیام شما دریافت شد.")
-
 # تنظیم و اجرای ربات
 def main():
     application = Application.builder().token(TOKEN).build()
@@ -128,7 +121,6 @@ def main():
     application.add_handler(CommandHandler("menu", menu))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_menu))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_emergency_message))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_regular_message))
 
     # اجرای ربات
     application.run_polling()
