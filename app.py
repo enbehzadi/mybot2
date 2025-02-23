@@ -28,7 +28,7 @@ def get_menu_keyboard():
             ["About Me", "My Resume"],
             ["Contact Me"]
         ],
-        resize_keyboard=True
+        resize_keyboard=True  # کوچک کردن دکمه‌ها برای نمایش بهتر
     )
 
 # ارسال پیام به API
@@ -52,7 +52,9 @@ async def send_to_api(user, message_text):
 # دستور /start
 async def start(update: Update, context: CallbackContext):
     user = update.message.from_user
+    # ذخیره رویداد استارت به عنوان یک پیام
     await send_to_api(user, "Start")
+
     await update.message.reply_text(
         "سلام! لطفا یک گزینه از منو انتخاب کنید:",
         reply_markup=get_menu_keyboard()
@@ -70,6 +72,7 @@ async def handle_menu(update: Update, context: CallbackContext):
     text = update.message.text
     user = update.message.from_user
 
+    # ذخیره انتخاب کاربر در API
     await send_to_api(user, text)
 
     if text == "Send Emergency Message":
@@ -82,7 +85,7 @@ async def handle_menu(update: Update, context: CallbackContext):
         """
         await update.message.reply_text(about_me)
     elif text == "My Resume":
-        resume_link = "https://enbehzadi.github.io/resume"
+        resume_link = "https://enbehzadi.github.io/resume"  # لینک رزومه شما
         await update.message.reply_text(f"رزومه من را می‌توانید از طریق لینک زیر مشاهده کنید:\n{resume_link}")
     elif text == "Contact Me":
         contact_info = """
@@ -100,9 +103,11 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
         text = update.message.text
         user = update.message.from_user
 
+        # ذخیره پیام اضطراری در API
         await send_to_api(user, f"Emergency Message: {text}")
 
         await update.message.reply_text("پیام اضطراری شما ارسال شد ✅")
+        # پاک کردن وضعیت
         context.user_data['waiting_for_emergency_message'] = False
     else:
         await update.message.reply_text("لطفا از منو استفاده کنید.")
@@ -114,18 +119,8 @@ def main():
     # اضافه کردن handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("menu", menu))
-
-    # پیام اضطراری اول بررسی شود
-    application.add_handler(MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        handle_emergency_message
-    ))
-
-    # سپس گزینه‌های منو بررسی شود
-    application.add_handler(MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        handle_menu
-    ))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_menu))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_emergency_message))
 
     # اجرای ربات
     application.run_polling()
