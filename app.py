@@ -107,7 +107,8 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
         # Clear the waiting status
         context.user_data['waiting_for_emergency_message'] = False
     else:
-        await update.message.reply_text("Please use the menu.")
+        # If not waiting for an emergency message, treat it as a regular menu option
+        await handle_menu(update, context)
 
 # Bot setup and execution
 def main():
@@ -116,8 +117,8 @@ def main():
     # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("menu", menu))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_menu))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_emergency_message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_emergency_message))  # Handle emergency messages first
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_menu))  # Handle regular menu options
 
     # Run the bot
     application.run_polling()
