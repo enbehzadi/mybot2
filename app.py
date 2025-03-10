@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Fetch token from environment variable
+# Get the token from the environment variable
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 if not TOKEN:
     logger.error("Error: Telegram bot token is missing!")
@@ -20,7 +20,7 @@ if not TOKEN:
 # API URL
 API_URL = os.getenv('API_URL', 'https://web-production-445f.up.railway.app/messages')
 
-# Create menu keyboard
+# Create the menu keyboard
 def get_menu_keyboard():
     return ReplyKeyboardMarkup(
         [
@@ -56,7 +56,7 @@ async def start(update: Update, context: CallbackContext):
     await send_to_api(user, "Start")
 
     await update.message.reply_text(
-        "Hello! Please choose an option from the menu:",
+        "Hello! I am a mobile and backend developer passionate about limitless learning.\nI love programming and am a big fan of the Turkish language.\nPlease choose an option from the menu:",
         reply_markup=get_menu_keyboard()
     )
 
@@ -67,12 +67,12 @@ async def menu(update: Update, context: CallbackContext):
         reply_markup=get_menu_keyboard()
     )
 
-# Handle menu selections
+# Handle menu options
 async def handle_menu(update: Update, context: CallbackContext):
     text = update.message.text
     user = update.message.from_user
 
-    # Save user's selection in the API
+    # Save user's selection to API
     await send_to_api(user, text)
 
     if text == "Send Emergency Message":
@@ -80,38 +80,36 @@ async def handle_menu(update: Update, context: CallbackContext):
         context.user_data['waiting_for_emergency_message'] = True
     elif text == "About Me":
         about_me = """
-        I am a mobile developer specializing in Android and iOS. My primary expertise is mobile programming, and I have 8 years of experience. I started with Java and later moved to Kotlin, Swift, and currently Flutter. I am also familiar with backend languages such as .NET Core, React, Flask, PHP, and Golang.
+        I am a mobile and backend developer passionate about limitless learning.\nI love programming and am a big fan of the Turkish language.
         """
         await update.message.reply_text(about_me)
     elif text == "My Resume":
         resume_link = "https://enbehzadi.github.io/resume"  # Your resume link
-        await update.message.reply_text(f"You can view my resume at the following link:\n{resume_link}")
+        await update.message.reply_text(f"You can view my resume via the link below:\n{resume_link}")
     elif text == "Contact Me":
         contact_info = """
-        You can contact me through the following methods:
-        📧 Email: enbehzadi@gmail.com
-        📞 Phone: +989158059590
+        You can contact me through the following ways:\n📧 Email: enbehzadi@gmail.com\n📞 Phone: +989158059590
         """
         await update.message.reply_text(contact_info)
     else:
         await update.message.reply_text("Please use the menu.")
 
-# Handle emergency message
+# Handle emergency messages
 async def handle_emergency_message(update: Update, context: CallbackContext):
     if context.user_data.get('waiting_for_emergency_message', False):
         text = update.message.text
         user = update.message.from_user
 
-        # Save emergency message in the API
+        # Save emergency message to API
         await send_to_api(user, f"Emergency Message: {text}")
 
         await update.message.reply_text("Your emergency message has been sent ✅")
-        # Clear the state
+        # Clear the waiting status
         context.user_data['waiting_for_emergency_message'] = False
     else:
         await update.message.reply_text("Please use the menu.")
 
-# Setup and run the bot
+# Bot setup and execution
 def main():
     application = Application.builder().token(TOKEN).build()
 
