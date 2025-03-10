@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        #game {
+            margin-top: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="game">
+    <h1>Simple Click Game</h1>
+    <p>Click the button as fast as you can!</p>
+    <button onclick="clickButton()">Click Me!</button>
+    <p id="score">Score: 0</p>
+</div>
+
+<script>
+    let score = 0;
+    function clickButton() {
+        score++;
+        document.getElementById("score").innerText = `Score: ${score}`;
+    }
+</script>
+</body>
+</html>

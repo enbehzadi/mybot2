@@ -20,13 +20,17 @@ if not TOKEN:
 # API URL
 API_URL = os.getenv('API_URL', 'https://web-production-445f.up.railway.app/messages')
 
+# Game URL (URL بازی شما)
+GAME_URL = "https://your-server.com/game.html"  # این را با URL بازی خود جایگزین کنید
+
 # Create the menu keyboard
 def get_menu_keyboard():
     return ReplyKeyboardMarkup(
         [
             ["Send Emergency Message"],
             ["About Me", "My Resume"],
-            ["Contact Me"]
+            ["Contact Me"],
+            ["Play Game"]  # اضافه کردن دکمه بازی
         ],
         resize_keyboard=True  # Resize buttons for better display
     )
@@ -91,6 +95,8 @@ async def handle_menu(update: Update, context: CallbackContext):
         You can contact me through the following ways:\n📧 Email: enbehzadi@gmail.com\n📞 Phone: +989158059590
         """
         await update.message.reply_text(contact_info)
+    elif text == "Play Game":  # اضافه کردن دستور بازی
+        await play_game(update, context)
     else:
         await update.message.reply_text("Please use the menu.")
 
@@ -109,6 +115,11 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
     else:
         # If not waiting for an emergency message, treat it as a regular menu option
         await handle_menu(update, context)
+
+# Play game command
+async def play_game(update: Update, context: CallbackContext):
+    game_short_name = "your_game_short_name"  # این را از BotFather دریافت کنید
+    await update.message.reply_game(game_short_name)
 
 # Bot setup and execution
 def main():

@@ -20,13 +20,17 @@ if not TOKEN:
 # API URL
 API_URL = os.getenv('API_URL', 'https://web-production-445f.up.railway.app/messages')
 
+# Game URL (URL بازی شما)
+GAME_URL = "https://your-server.com/game.html"  # این را با URL بازی خود جایگزین کنید
+
 # Create the menu keyboard
 def get_menu_keyboard():
     return ReplyKeyboardMarkup(
         [
             ["Send Emergency Message"],
             ["About Me", "My Resume"],
-            ["Contact Me"]
+            ["Contact Me"],
+            ["Play Game"]  # اضافه کردن دکمه بازی
         ],
         resize_keyboard=True  # Resize buttons for better display
     )
@@ -56,7 +60,7 @@ async def start(update: Update, context: CallbackContext):
     await send_to_api(user, "Start")
 
     await update.message.reply_text(
-        "Hello! Please choose an option from the menu:",
+        "Hello! I am a mobile and backend developer passionate about limitless learning.\nI love programming and am a big fan of the Turkish language.\nPlease choose an option from the menu:",
         reply_markup=get_menu_keyboard()
     )
 
@@ -80,8 +84,7 @@ async def handle_menu(update: Update, context: CallbackContext):
         context.user_data['waiting_for_emergency_message'] = True
     elif text == "About Me":
         about_me = """
-        I am a mobile and backend developer passionate about limitless learning.
-        I love programming and am a big fan of the Turkish language.
+        I am a mobile and backend developer passionate about limitless learning.\nI love programming and am a big fan of the Turkish language.
         """
         await update.message.reply_text(about_me)
     elif text == "My Resume":
@@ -89,11 +92,11 @@ async def handle_menu(update: Update, context: CallbackContext):
         await update.message.reply_text(f"You can view my resume via the link below:\n{resume_link}")
     elif text == "Contact Me":
         contact_info = """
-        You can contact me through the following ways:
-        📧 Email: enbehzadi@gmail.com
-        📞 Phone: +989158059590
+        You can contact me through the following ways:\n📧 Email: enbehzadi@gmail.com\n📞 Phone: +989158059590
         """
         await update.message.reply_text(contact_info)
+    elif text == "Play Game":  # اضافه کردن دستور بازی
+        await play_game(update, context)
     else:
         await update.message.reply_text("Please use the menu.")
 
@@ -110,7 +113,13 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
         # Clear the waiting status
         context.user_data['waiting_for_emergency_message'] = False
     else:
-        await update.message.reply_text("Please use the menu.")
+        # If not waiting for an emergency message, treat it as a regular menu option
+        await handle_menu(update, context)
+
+# Play game command
+async def play_game(update: Update, context: CallbackContext):
+    game_short_name = "your_game_short_name"  # این را از BotFather دریافت کنید
+    await update.message.reply_game(game_short_name)
 
 # Bot setup and execution
 def main():
@@ -119,8 +128,8 @@ def main():
     # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("menu", menu))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_menu))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_emergency_message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_emergency_message))  # Handle emergency messages first
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_menu))  # Handle regular menu options
 
     # Run the bot
     application.run_polling()
