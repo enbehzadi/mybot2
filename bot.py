@@ -4,89 +4,6 @@ import requests
 import os
 import logging
 
-
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-import psycopg2
-
-
-app = Flask(__name__)
-CORS(app)  # فعال کردن CORS برای ارتباط با Flutter
-
-# تنظیمات اتصال به PostgreSQL
-DATABASE_URL = "postgresql://postgres:KLvPStKIpwAfwfRQJyaMZFzHtFHuRhKE@mainline.proxy.rlwy.net:44269/railway"
-
-# تابع برای اتصال به پایگاه داده
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
-
-# ایجاد جدول پیام‌ها (اگر وجود نداشته باشد)
-def create_messages_table():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS messages (
-            id SERIAL PRIMARY KEY,
-            telegram_id INTEGER NOT NULL,
-            first_name TEXT NOT NULL,
-            last_name TEXT,
-            message_text TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    cur.close()
-    conn.close()
-
-# Endpoint برای ذخیره پیام
-@app.route('/messages', methods=['POST'])
-def save_message():
-    data = request.json
-    telegram_id = data.get('telegram_id')
-    first_name = data.get('first_name')
-    last_name = data.get('last_name', '')
-    message_text = data.get('message_text')
-
-    if not telegram_id or not first_name or not message_text:
-        return jsonify({"status": "error", "message": "Missing required fields"}), 400
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
-        (telegram_id, first_name, last_name, message_text)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({"status": "success", "message": "Message saved"}), 201
-
-# Endpoint برای دریافت تمام پیام‌ها
-@app.route('/messages', methods=['GET'])
-def get_all_messages():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM messages ORDER BY created_at DESC')
-    messages = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    # تبدیل نتیجه به فرمت JSON
-    messages_list = []
-    for message in messages:
-        messages_list.append({
-            "id": message[0],
-            "telegram_id": message[1],
-            "first_name": message[2],
-            "last_name": message[3],
-            "message_text": message[4],
-            "created_at": message[5].strftime('%Y-%m-%d %H:%M:%S')
-        })
-
-    return jsonify(messages_list)
-
 # Logging configuration
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -101,10 +18,7 @@ if not TOKEN:
     exit(1)
 
 # API URL
-API_URL = os.getenv('API_URL', 'https://web-production-445f.up.railway.app/messages')
-
-# Game URL (URL بازی شما)
-GAME_URL = "https://web-production-445f.up.railway.app/game.html"  # این را با URL بازی خود جایگزین کنید
+API_URL = "http://127.0.0.1:5000/messages"  # آدرس API Flask
 
 # Create the menu keyboard
 def get_menu_keyboard():
