@@ -1,8 +1,12 @@
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import os
 import logging
-from app import save_message  # import تابع save_message از app.py
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import psycopg2
+import os
+from app import save_message
 
 # Logging configuration
 logging.basicConfig(
@@ -28,18 +32,22 @@ def get_menu_keyboard():
         ],
         resize_keyboard=True  # Resize buttons for better display
     )
-
+def get_db_connection():
+    conn = psycopg2.connect(DATABASE_URL)
+    return conn
 # تابع برای ذخیره پیام در دیتابیس
 async def send_to_api(user, message_text):
-    """
-    ذخیره پیام در دیتابیس با استفاده از تابع save_message
-    """
-    result = save_message(
-        telegram_id=user.id,
-        first_name=user.first_name,
-        last_name=user.last_name if user.last_name else "",
-        message_text=message_text
-    )
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
+            (user.telegram_id, user.first_name, user.last_name, user.message_text)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
     logger.info(result)  # لاگ نتیجه
 
 # /start command
@@ -107,8 +115,11 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
 
 # Play game command
 async def play_game(update: Update, context: CallbackContext):
-    game_short_name = "your_game_short_name"  # این را از BotFather دریافت کنید
-    await update.message.reply_game(game_short_name)
+    # ایجاد یک اینلاین کیبورد با لینک به game.html
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Play Now", url="https://yourwebsite.com/game.html")]
+    ])
+    await update.message.reply_text("Click the button below to play the game:", reply_markup=keyboard)
 
 # Bot setup and execution
 def main():
