@@ -104,7 +104,7 @@ if not TOKEN:
 API_URL = os.getenv('API_URL', 'https://web-production-445f.up.railway.app/messages')
 
 # Game URL (URL بازی شما)
-GAME_URL = "https://your-server.com/game.html"  # این را با URL بازی خود جایگزین کنید
+GAME_URL = "https://web-production-445f.up.railway.app/game.html"  # این را با URL بازی خود جایگزین کنید
 
 # Create the menu keyboard
 def get_menu_keyboard():
