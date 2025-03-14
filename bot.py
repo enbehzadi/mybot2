@@ -18,7 +18,7 @@ if not TOKEN:
     exit(1)
 
 # API URL
-API_URL = "http://127.0.0.1:5000/messages"  # آدرس API Flask
+API_URL = "https://web-production-445f.up.railway.app/messages"  # آدرس API Flask
 
 # Create the menu keyboard
 def get_menu_keyboard():
@@ -33,6 +33,10 @@ def get_menu_keyboard():
     )
 
 # Send message to API
+import requests
+
+import requests
+
 async def send_to_api(user, message_text):
     message_data = {
         'telegram_id': user.id,
@@ -42,13 +46,15 @@ async def send_to_api(user, message_text):
     }
 
     try:
-        response = requests.post(API_URL, json=message_data)
+        response = requests.post(API_URL, json=message_data, timeout=5)  # اضافه کردن timeout
         if response.status_code == 201:
             logger.info(f"Message saved: {message_text}")
         else:
             logger.error(f"API Error: {response.status_code} - {response.text}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request failed: {e}")
     except Exception as e:
-        logger.error(f"Error sending message to API: {e}")
+        logger.error(f"Unexpected error: {e}")
 
 # /start command
 async def start(update: Update, context: CallbackContext):

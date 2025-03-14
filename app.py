@@ -39,6 +39,7 @@ def create_messages_table():
     conn.close()
 
 # Endpoint برای ذخیره پیام
+
 @app.route('/messages', methods=['POST'])
 def save_message():
     data = request.json
@@ -50,17 +51,19 @@ def save_message():
     if not telegram_id or not first_name or not message_text:
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
-        (telegram_id, first_name, last_name, message_text)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({"status": "success", "message": "Message saved"}), 201
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
+            (telegram_id, first_name, last_name, message_text)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "success", "message": "Message saved"}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # Endpoint برای دریافت تمام پیام‌ها
 @app.route('/messages', methods=['GET'])
