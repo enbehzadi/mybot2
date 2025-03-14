@@ -12,7 +12,8 @@ def test_db_connection():
     try:
         conn = psycopg2.connect(DATABASE_URL)
         print("Connection to PostgreSQL successful!")
-        conn.close()
+        # conn.close()
+        return  conn
     except Exception as e:
         print(f"Error connecting to PostgreSQL: {e}")
 # تابع برای اتصال به پایگاه داده
@@ -53,7 +54,7 @@ def save_message():
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
     try:
-        conn = get_db_connection()
+        conn = test_db_connection()
         cur = conn.cursor()
         cur.execute(
             'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
@@ -91,6 +92,5 @@ def get_all_messages():
     return jsonify(messages_list)
 
 if __name__ == '__main__':
-    test_db_connection()
     create_messages_table()  # ایجاد جدول اگر وجود نداشته باشد
     app.run(host='0.0.0.0', port=5000)  # ایجاد جدول اگر وجود نداشته باشد
