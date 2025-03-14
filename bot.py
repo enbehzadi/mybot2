@@ -33,26 +33,62 @@ def get_menu_keyboard():
     )
 
 
+def save_message():
+    data = request.json
+    telegram_id = data.get('telegram_id')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name', '')
+    message_text = data.get('message_text')
 
-async def send_to_api(user, message_text):
+    if not telegram_id or not first_name or not message_text:
+        return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
+            (telegram_id, first_name, last_name, message_text)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "success", "message": "Message saved"}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+def get_db_connection():
+    conn = psycopg2.connect(DATABASE_URL)
+    return conn
+
+
+# تابع برای ارسال داده به دیتابیس
+def send_to_api(user, message_text):
     message_data = {
-        'telegram_id': user.id,
-        'first_name': user.first_name,
-        'last_name': user.last_name if user.last_name else "",
-        'message_text': message_text
+        "telegram_id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name if user.last_name else "",
+        "message_text": message_text
     }
     print(message_data)
-    try:
 
-        response = requests.post(API_URL, json=message_data, timeout=5)  # اضافه کردن timeout
-        if response.status_code == 201:
-            logger.info(f"Message saved: {message_text}")
-        else:
-            logger.error(f"API Error: {response.status_code} - {response.text}")
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
+            (user.id, user.first_name, user.last_name or "", message_text)
+        )
+        conn.commit()
+        logging.info(f"Message saved to DB: {message_data}")
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        logging.error(f"Database error: {e}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
 
 # /start command
 async def start(update: Update, context: CallbackContext):
