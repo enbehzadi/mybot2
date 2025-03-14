@@ -1,9 +1,9 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
-import requests
 import os
 import logging
-from app import save_message
+from app import save_message  # import تابع save_message از app.py
+
 # Logging configuration
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -17,9 +17,6 @@ if not TOKEN:
     logger.error("Error: Telegram bot token is missing!")
     exit(1)
 
-# API URL
-API_URL = "https://web-production-445f.up.railway.app/save_message"  # آدرس API Flask
-
 # Create the menu keyboard
 def get_menu_keyboard():
     return ReplyKeyboardMarkup(
@@ -32,23 +29,16 @@ def get_menu_keyboard():
         resize_keyboard=True  # Resize buttons for better display
     )
 
-
-
+# تابع برای ذخیره پیام
 async def send_to_api(user, message_text):
-    message_data = {
-        'telegram_id': user.id,
-        'first_name': user.first_name,
-        'last_name': user.last_name if user.last_name else "",
-        'message_text': message_text
-    }
-    print(message_data)
-    try:
-
-        result = save_message(user.id, user.first_name, user.last_name if user.last_name else "", message_text)
-        logger.info(result) # اضافه کردن timeout
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {e}")
-
+    # فراخوانی مستقیم تابع save_message
+    result = save_message(
+        telegram_id=user.id,
+        first_name=user.first_name,
+        last_name=user.last_name if user.last_name else "",
+        message_text=message_text
+    )
+    logger.info(result)  # لاگ نتیجه
 
 # /start command
 async def start(update: Update, context: CallbackContext):
@@ -73,7 +63,7 @@ async def handle_menu(update: Update, context: CallbackContext):
     text = update.message.text
     user = update.message.from_user
 
-    # Save user's selection to API
+    # Save user's selection
     await send_to_api(user, text)
 
     if text == "Send Emergency Message":
@@ -103,7 +93,7 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
         text = update.message.text
         user = update.message.from_user
 
-        # Save emergency message to API
+        # Save emergency message
         await send_to_api(user, f"Emergency Message: {text}")
 
         await update.message.reply_text("Your emergency message has been sent ✅")

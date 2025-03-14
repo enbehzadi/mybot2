@@ -6,22 +6,16 @@ import os
 app = Flask(__name__)
 CORS(app)  # فعال کردن CORS برای ارتباط با Flutter
 
-# تنظیمات اتصال به PostgreSQL
+# خواندن DATABASE_URL از متغیر محیطی
 DATABASE_URL = os.getenv('DATABASE_URL')
-def test_db_connection():
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        print("Connection to PostgreSQL successful!")
-        # conn.close()
-        return  conn
-    except Exception as e:
-        print(f"Error connecting to PostgreSQL: {e}")
-# تابع برای اتصال به پایگاه داده
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set!")
+
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
-# ایجاد جدول پیام‌ها (اگر وجود نداشته باشد)
 def create_messages_table():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -38,8 +32,7 @@ def create_messages_table():
     conn.commit()
     cur.close()
     conn.close()
-
-# Endpoint برای ذخیره پیام
+    print("Table 'messages' created successfully.")
 
 @app.route('/save_message', methods=['POST'])
 def save_message():
@@ -53,7 +46,7 @@ def save_message():
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
     try:
-        conn = test_db_connection()
+        conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(
             'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
@@ -66,7 +59,6 @@ def save_message():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# Endpoint برای دریافت تمام پیام‌ها
 @app.route('/messages', methods=['GET'])
 def get_all_messages():
     conn = get_db_connection()
@@ -76,7 +68,6 @@ def get_all_messages():
     cur.close()
     conn.close()
 
-    # تبدیل نتیجه به فرمت JSON
     messages_list = []
     for message in messages:
         messages_list.append({
@@ -92,4 +83,4 @@ def get_all_messages():
 
 if __name__ == '__main__':
     create_messages_table()  # ایجاد جدول اگر وجود نداشته باشد
-    app.run(host='0.0.0.0', port=5000)  # ایجاد جدول اگر وجود نداشته باشد
+    app.run(host='0.0.0.0', port=5000)
