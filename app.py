@@ -8,7 +8,13 @@ CORS(app)  # فعال کردن CORS برای ارتباط با Flutter
 
 # تنظیمات اتصال به PostgreSQL
 DATABASE_URL = "postgresql://postgres:KLvPStKIpwAfwfRQJyaMZFzHtFHuRhKE@mainline.proxy.rlwy.net:44269/railway"
-
+def test_db_connection():
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        print("Connection to PostgreSQL successful!")
+        conn.close()
+    except Exception as e:
+        print(f"Error connecting to PostgreSQL: {e}")
 # تابع برای اتصال به پایگاه داده
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
@@ -81,4 +87,5 @@ def get_all_messages():
     return jsonify(messages_list)
 
 if __name__ == '__main__':
+    test_db_connection()
     create_messages_table()  # ایجاد جدول اگر وجود نداشته باشد
