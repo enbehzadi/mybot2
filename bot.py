@@ -18,7 +18,7 @@ if not TOKEN:
     exit(1)
 
 # API URL
-API_URL = "https://web-production-445f.up.railway.app/messages"  # آدرس API Flask
+API_URL = "https://web-production-445f.up.railway.app/save_message"  # آدرس API Flask
 
 # Create the menu keyboard
 def get_menu_keyboard():
@@ -32,10 +32,7 @@ def get_menu_keyboard():
         resize_keyboard=True  # Resize buttons for better display
     )
 
-# Send message to API
-import requests
 
-import requests
 
 async def send_to_api(user, message_text):
     message_data = {
@@ -44,8 +41,9 @@ async def send_to_api(user, message_text):
         'last_name': user.last_name if user.last_name else "",
         'message_text': message_text
     }
-
+    print(message_data)
     try:
+
         response = requests.post(API_URL, json=message_data, timeout=5)  # اضافه کردن timeout
         if response.status_code == 201:
             logger.info(f"Message saved: {message_text}")

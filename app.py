@@ -40,7 +40,7 @@ def create_messages_table():
 
 # Endpoint برای ذخیره پیام
 
-@app.route('/messages', methods=['POST'])
+@app.route('/save_message', methods=['POST'])
 def save_message():
     data = request.json
     telegram_id = data.get('telegram_id')
