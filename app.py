@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)  # فعال کردن CORS برای ارتباط با Flutter
 
 # تنظیمات اتصال به PostgreSQL
-DATABASE_URL = "postgresql://postgres:KLvPStKIpwAfwfRQJyaMZFzHtFHuRhKE@mainline.proxy.rlwy.net:44269/railway"
+DATABASE_URL = os.getenv('DATABASE_URL')
 def test_db_connection():
     try:
         conn = psycopg2.connect(DATABASE_URL)
