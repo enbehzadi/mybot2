@@ -1,9 +1,9 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
-import requests
 import os
 import logging
-from app import save_message
+from app import save_message  # import تابع save_message از app.py
+
 # Logging configuration
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -17,9 +17,6 @@ if not TOKEN:
     logger.error("Error: Telegram bot token is missing!")
     exit(1)
 
-# API URL
-API_URL = "https://web-production-445f.up.railway.app/save_message"  # آدرس API Flask
-
 # Create the menu keyboard
 def get_menu_keyboard():
     return ReplyKeyboardMarkup(
@@ -32,63 +29,18 @@ def get_menu_keyboard():
         resize_keyboard=True  # Resize buttons for better display
     )
 
-
-def save_message():
-    data = request.json
-    telegram_id = data.get('telegram_id')
-    first_name = data.get('first_name')
-    last_name = data.get('last_name', '')
-    message_text = data.get('message_text')
-
-    if not telegram_id or not first_name or not message_text:
-        return jsonify({"status": "error", "message": "Missing required fields"}), 400
-
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
-            (telegram_id, first_name, last_name, message_text)
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({"status": "success", "message": "Message saved"}), 201
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
-
-
-# تابع برای ارسال داده به دیتابیس
-def send_to_api(user, message_text):
-    message_data = {
-        "telegram_id": user.id,
-        "first_name": user.first_name,
-        "last_name": user.last_name if user.last_name else "",
-        "message_text": message_text
-    }
-    print(message_data)
-
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            'INSERT INTO messages (telegram_id, first_name, last_name, message_text) VALUES (%s, %s, %s, %s)',
-            (user.id, user.first_name, user.last_name or "", message_text)
-        )
-        conn.commit()
-        logging.info(f"Message saved to DB: {message_data}")
-    except Exception as e:
-        logging.error(f"Database error: {e}")
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
-
-
+# تابع برای ذخیره پیام در دیتابیس
+async def send_to_api(user, message_text):
+    """
+    ذخیره پیام در دیتابیس با استفاده از تابع save_message
+    """
+    result = save_message(
+        telegram_id=user.id,
+        first_name=user.first_name,
+        last_name=user.last_name if user.last_name else "",
+        message_text=message_text
+    )
+    logger.info(result)  # لاگ نتیجه
 
 # /start command
 async def start(update: Update, context: CallbackContext):
@@ -113,7 +65,7 @@ async def handle_menu(update: Update, context: CallbackContext):
     text = update.message.text
     user = update.message.from_user
 
-    # Save user's selection to API
+    # Save user's selection
     await send_to_api(user, text)
 
     if text == "Send Emergency Message":
@@ -143,7 +95,7 @@ async def handle_emergency_message(update: Update, context: CallbackContext):
         text = update.message.text
         user = update.message.from_user
 
-        # Save emergency message to API
+        # Save emergency message
         await send_to_api(user, f"Emergency Message: {text}")
 
         await update.message.reply_text("Your emergency message has been sent ✅")
