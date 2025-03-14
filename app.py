@@ -93,3 +93,4 @@ def get_all_messages():
 if __name__ == '__main__':
     test_db_connection()
     create_messages_table()  # ایجاد جدول اگر وجود نداشته باشد
+    app.run(host='0.0.0.0', port=5000)  # ایجاد جدول اگر وجود نداشته باشد
