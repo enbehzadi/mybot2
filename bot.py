@@ -3,7 +3,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import requests
 import os
 import logging
-import  app
+from app import save_message
 # Logging configuration
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -44,15 +44,11 @@ async def send_to_api(user, message_text):
     print(message_data)
     try:
 
-        response = requests.post(API_URL, json=message_data, timeout=5)  # اضافه کردن timeout
-        if response.status_code == 201:
-            logger.info(f"Message saved: {message_text}")
-        else:
-            logger.error(f"API Error: {response.status_code} - {response.text}")
+        result = save_message(user.id, user.first_name, user.last_name if user.last_name else "", message_text)
+        logger.info(result) # اضافه کردن timeout
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+
 
 # /start command
 async def start(update: Update, context: CallbackContext):
